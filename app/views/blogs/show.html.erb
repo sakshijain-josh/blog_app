@@ -2,6 +2,14 @@
 
 <%= render @blog %>
 
+<h3>Comments:</h3>
+<%= render @blog.comments %>
+
+<h3>Add a Comment:</h3>
+
+<%= render partial: 'comments/form', locals: { blog: @blog } %>
+
+
 <div>
   <%= link_to "Edit this blog", edit_blog_path(@blog) %> |
   <%= link_to "Back to blogs", blogs_path %>

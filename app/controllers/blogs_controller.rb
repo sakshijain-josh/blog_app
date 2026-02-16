@@ -1,9 +1,20 @@
+require 'benchmark'
+
 class BlogsController < ApplicationController
   before_action :set_blog, only: %i[ show edit update destroy publish ]
 
   # GET /blogs
   def index
-    @blogs = Blog.published
+    benchmark_result = Benchmark.measure do
+      @blogs = Blog.published
+    end
+
+    Rails.logger.info "Blog Index Query Benchmark: #{benchmark_result}"
+  end
+
+  # GET /blogs/drafts
+  def drafts
+    @blogs = Blog.drafts
   end
 
   # GET /blogs/1
@@ -25,6 +36,9 @@ class BlogsController < ApplicationController
 
     respond_to do |format|
       if @blog.save
+        # Schedule auto-publish job for 1 hour from now
+        Blogs::AutoPublishJob.set(wait: 1.hour).perform_later(@blog.id)
+
         format.html { redirect_to @blog, notice: "Blog was successfully created." }
         format.json { render :show, status: :created, location: @blog }
       else
@@ -59,14 +73,19 @@ class BlogsController < ApplicationController
 
   # PATCH /blogs/1/publish
   def publish
-    @blog.update(published: true)
-    render json: { status: "published" }
+    result = Blogs::PublishingService.call(@blog)
+
+    if result[:success]
+      render json: { status: "published", blog: result[:blog] }
+    else
+      render json: { status: "error", message: result[:error] }, status: :unprocessable_entity
+    end
   end
 
   private
 
   def set_blog
-    @blog = Blog.published.find(params.expect(:id))
+    @blog = Blog.find(params.expect(:id))
   end
 
   def blog_params

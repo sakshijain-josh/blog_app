@@ -1,16 +1,28 @@
 Blog.destroy_all
 Comment.destroy_all
 
+puts "Creating blogs with Faker..."
+
+# Create 20 blogs with realistic data
 20.times do |i|
   blog = Blog.create!(
-    title: "Blog #{i + 1}",
-    body: "Sample body #{i + 1}",
-    published: i < 10
+    title: Faker::Book.title,
+    body: Faker::Lorem.paragraphs(number: 3).join("\n\n"),
+    published: i < 10  # First 10 are published
   )
 
+  # Add comments to published blogs
   if blog.published?
-    3.times do
-      blog.comments.create!(body: "Sample comment")
+    rand(2..5).times do
+      blog.comments.create!(
+        body: Faker::Lorem.sentence(word_count: rand(5..15))
+      )
     end
   end
+
+  print "." if (i + 1) % 5 == 0
 end
+
+puts "\nSeeding complete!"
+puts "Created #{Blog.count} blogs (#{Blog.published.count} published, #{Blog.drafts.count} drafts)"
+puts "Created #{Comment.count} comments"

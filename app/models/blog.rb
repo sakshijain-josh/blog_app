@@ -5,4 +5,5 @@ class Blog < ApplicationRecord
   validates :body, presence: true
 
   scope :published, -> { where(published: true) }
+  scope :drafts, -> { where(published: false) }
 end
